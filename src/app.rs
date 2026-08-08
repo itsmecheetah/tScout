@@ -109,6 +109,8 @@ impl App {
         });
         self.entries = entries;
 
+        self.list_state.select(Some(0));
+
         Ok(())
     }
 
