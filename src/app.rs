@@ -61,8 +61,8 @@ impl App {
 
                 AppEvent::NextItem => self.next_item(),
                 AppEvent::PreviousItem => self.previous_item(),
-                AppEvent::PreviousFolder => self.previous_folder(),
-                AppEvent::Select => self.select(),
+                AppEvent::PreviousFolder => self.previous_folder()?,
+                AppEvent::Select => self.select()?,
 
                 AppEvent::InputFieldOpenBash => self.input_field_open_bash(),
                 AppEvent::Escape => self.escape(),
@@ -112,23 +112,32 @@ impl App {
         self.list_state.select_previous();
     }
 
-    pub fn previous_folder(&mut self) {
-        // Go to previous folder (duh)
+    pub fn previous_folder(&mut self) -> color_eyre::Result<()> {
+        if let Some(parent) = self.current_dir.parent() {
+            self.current_dir = parent.to_path_buf();
+            self.refresh()?;
+        }
+        Ok(())
     }
 
-    pub fn select(&mut self) {
-        // If inside input field:
-            // If bash selected:
-                // Run bash command
-                // If output, open output window and add text there
-            // If command selected:
-                // Run that command
-                // Possibly open output window depending on command
-        // Else:
-            // If folder selected:
-                // Repopulate list with all items in the selected folder
-            // If file selected:
-                // Open file with an application (either via another list or just a default idk)
+    pub fn select(&mut self) -> color_eyre::Result<()> {
+        // when/if i also add bash this will be the same keybind to execute that command, so add that here.
+        // (note: currently the right arrow will ALSO run this function, so I should praobably do something
+        // about making sure that right arrow can still be used to navigate folders while typing bash.)
+
+        if let Some(i) = self.list_state.selected() {
+            if let Some(entry) = self.entries.get(i) {
+                let is_dir = entry.file_type()?.is_dir();
+                if is_dir {
+                    self.current_dir = entry.path();
+                    self.refresh()?;
+                } else {
+                    // file opening logic. i still don't rlly know how i wanna do this ngl.
+                    // for now im js gonna do nothing and the user's gotta do `nvim <file>` or smt
+                }
+            }
+        }
+        Ok(())
     }
 
     pub fn input_field_open_commands(&mut self) {
