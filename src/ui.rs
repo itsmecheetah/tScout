@@ -14,10 +14,12 @@ impl Widget for &mut App {
             .split(area);
 
         let header_block = Block::bordered()
+            .title("bash")
             .title_alignment(Alignment::Left)
             .border_type(BorderType::Rounded);
 
         let file_block = Block::bordered()
+            .title(self.current_dir.to_string_lossy())
             .title_alignment(Alignment::Left)
             .border_type(BorderType::Rounded);
 

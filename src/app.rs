@@ -92,7 +92,11 @@ impl App {
     pub fn refresh(&mut self) -> color_eyre::Result<()> {
         let mut entries: Vec<DirEntry> = fs::read_dir(&self.current_dir)?
             .collect::<Result<_, _>>()?;
-
+        
+        entries.sort_by_key(|e| {
+            let is_dir = e.file_type().map(|ft| ft.is_dir()).unwrap_or(false);
+            (!is_dir, e.file_name().to_string_lossy().to_lowercase())
+        });
         self.entries = entries;
 
         Ok(())
