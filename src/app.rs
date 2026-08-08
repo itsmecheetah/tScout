@@ -2,32 +2,34 @@ use crate::event::{AppEvent, Event, EventHandler};
 
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use ratatui::DefaultTerminal;
+use ratatui::widgets::ListState;
 
 #[derive(Debug)]
 pub struct App {
     pub running: bool,
-    pub counter: u8,
     pub events: EventHandler,
+    pub list_state: ListState,
 }
 
 impl Default for App {
     fn default() -> Self {
+        let mut list_state = ListState::default();
+        list_state.select(Some(0));
+
         Self {
             running: true,
-            counter: 0,
             events: EventHandler::new(),
+            list_state,
         }
     }
 }
 
 impl App {
-    pub fn new() -> Self {
-        Self::default()
-    }
+    pub fn new() -> Self { Self::default() }
 
     pub fn run(mut self, mut terminal: DefaultTerminal) -> color_eyre::Result<()> {
         while self.running {
-            terminal.draw(|frame| frame.render_widget(&self, frame.area()))?;
+            terminal.draw(|frame| frame.render_widget(&mut self, frame.area()))?;
             self.handle_events()?;
         }
         Ok(())
@@ -52,7 +54,6 @@ impl App {
                 AppEvent::PreviousFolder => self.previous_folder(),
                 AppEvent::Select => self.select(),
 
-                AppEvent::InputFieldOpenCommands => self.input_field_open_commands(),
                 AppEvent::InputFieldOpenBash => self.input_field_open_bash(),
                 AppEvent::Escape => self.escape(),
             },
@@ -71,8 +72,7 @@ impl App {
             KeyCode::Right | KeyCode::Enter => self.events.send(AppEvent::Select),
             KeyCode::Left => self.events.send(AppEvent::PreviousFolder),
 
-            KeyCode::Char(':') => self.events.send(AppEvent::InputFieldOpenCommands),
-            KeyCode::Char(char) => self.events.send(AppEvent::InputFieldOpenBash), // How can I capture any input (aside from ':') and pass it as a parameter to that listener so that I can have the first character ready in the bash section of the file explorer?
+            KeyCode::Char(char) => self.events.send(AppEvent::InputFieldOpenBash),
             KeyCode::Esc => self.events.send(AppEvent::Escape),
             _ => {}
         }
@@ -85,11 +85,11 @@ impl App {
     }
 
     pub fn next_item(&mut self) {
-        // Select next item
+        self.list_state.select_next();
     }
 
     pub fn previous_item(&mut self) {
-        // Select previous item
+        self.list_state.select_previous();
     }
 
     pub fn previous_folder(&mut self) {

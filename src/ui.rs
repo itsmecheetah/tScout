@@ -1,22 +1,17 @@
 use ratatui::{
     buffer::Buffer,
     layout::{Alignment, Rect, Layout, Constraint, Direction},
-    style::{Color, Stylize},
-    widgets::{Block, BorderType, Paragraph, Widget},
+    style::{Color, Style, Stylize},
+    widgets::{Block, List, BorderType, Paragraph, Widget, StatefulWidget},
 };
-
 use crate::app::App;
 
-impl Widget for &App {
+impl Widget for &mut App {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let layout = Layout::default()
             .direction(Direction::Vertical)
-            .constraints([Constraint::Length(1), Constraint::Length(3), Constraint::Min(0)])
+            .constraints([Constraint::Length(3), Constraint::Min(0)])
             .split(area);
-
-        let title_block = Block::new()
-            .title("tScout - type :h for a list of keybinds")
-            .title_alignment(Alignment::Center);
 
         let header_block = Block::bordered()
             .title_alignment(Alignment::Left)
@@ -26,24 +21,20 @@ impl Widget for &App {
             .title_alignment(Alignment::Left)
             .border_type(BorderType::Rounded);
 
-        let title_text = Paragraph::new("dummy text")
-            .fg(Color::White)
-            .bg(Color::Black)
-            .block(title_block)
-            .render(area, buf);
-
-        let header_text = Paragraph::new("$ ")
+        Paragraph::new("$ ")
             .fg(Color::White)
             .bg(Color::Black)
             .left_aligned()
             .block(header_block)
-            .render(layout[1], buf);
+            .render(layout[0], buf);
 
-        let file_text = Paragraph::new("Desktop\nDocuments\nDownloads\nMusic\nPictures\nProjects\nPublic")
-            .fg(Color::White)
-            .bg(Color::Black)
-            .left_aligned()
+        let items = ["Desktop", "Documents", "Downloads", "Music", "Pictures", "Projects"];
+        let list = List::new(items)
             .block(file_block)
-            .render(layout[2], buf);
+            .highlight_style(Style::new())
+            .highlight_symbol("> ")
+            .repeat_highlight_symbol(true);
+
+        StatefulWidget::render(list, layout[1], buf, &mut self.list_state);
     }
 }
