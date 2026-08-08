@@ -3,6 +3,7 @@ use ratatui::{
     layout::{Alignment, Rect, Layout, Constraint, Direction},
     style::{Color, Style, Stylize},
     widgets::{Block, List, BorderType, Paragraph, Widget, StatefulWidget},
+    text::Line,
 };
 use crate::app::App;
 
@@ -20,7 +21,7 @@ impl Widget for &mut App {
 
         let file_block = Block::bordered()
             .title(self.current_dir.to_string_lossy())
-            .title_alignment(Alignment::Left)
+            .title(Line::from(if self.show_hidden { "showing hidden files" } else { "" }).alignment(Alignment::Right))
             .border_type(BorderType::Rounded);
 
         Paragraph::new("$ ")
