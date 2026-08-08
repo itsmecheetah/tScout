@@ -3,12 +3,16 @@ use crate::event::{AppEvent, Event, EventHandler};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use ratatui::DefaultTerminal;
 use ratatui::widgets::ListState;
+use std::fs::{self, DirEntry};
+use std::path::PathBuf;
 
 #[derive(Debug)]
 pub struct App {
     pub running: bool,
     pub events: EventHandler,
     pub list_state: ListState,
+    pub current_dir: PathBuf,
+    pub entries: Vec<DirEntry>,
 }
 
 impl Default for App {
@@ -16,10 +20,14 @@ impl Default for App {
         let mut list_state = ListState::default();
         list_state.select(Some(0));
 
+        let current_dir = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+
         Self {
             running: true,
             events: EventHandler::new(),
             list_state,
+            current_dir,
+            entries: Vec::new(),
         }
     }
 }
@@ -28,6 +36,8 @@ impl App {
     pub fn new() -> Self { Self::default() }
 
     pub fn run(mut self, mut terminal: DefaultTerminal) -> color_eyre::Result<()> {
+        self.refresh()?;
+
         while self.running {
             terminal.draw(|frame| frame.render_widget(&mut self, frame.area()))?;
             self.handle_events()?;
@@ -78,6 +88,16 @@ impl App {
         }
         Ok(())
     }
+
+    pub fn refresh(&mut self) -> color_eyre::Result<()> {
+        let mut entries: Vec<DirEntry> = fs::read_dir(&self.current_dir)?
+            .collect::<Result<_, _>>()?;
+
+        self.entries = entries;
+
+        Ok(())
+    }
+
     pub fn tick(&self) {}
 
     pub fn quit(&mut self) {

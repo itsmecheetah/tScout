@@ -28,7 +28,9 @@ impl Widget for &mut App {
             .block(header_block)
             .render(layout[0], buf);
 
-        let items = ["Desktop", "Documents", "Downloads", "Music", "Pictures", "Projects"];
+        let items: Vec<String> = self.entries.iter()
+            .map(|e| e.file_name().to_string_lossy().into_owned())
+            .collect();
         let list = List::new(items)
             .block(file_block)
             .highlight_style(Style::new())
