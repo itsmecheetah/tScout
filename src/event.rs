@@ -22,6 +22,7 @@ pub enum AppEvent {
     PreviousItem,
     Select,
     PreviousFolder,
+    ToggleHidden,
     InputFieldOpenBash,
     Escape,
 }

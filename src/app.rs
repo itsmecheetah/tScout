@@ -13,6 +13,7 @@ pub struct App {
     pub list_state: ListState,
     pub current_dir: PathBuf,
     pub entries: Vec<DirEntry>,
+    pub show_hidden: bool,
 }
 
 impl Default for App {
@@ -28,6 +29,7 @@ impl Default for App {
             list_state,
             current_dir,
             entries: Vec::new(),
+            show_hidden: false,
         }
     }
 }
@@ -64,6 +66,8 @@ impl App {
                 AppEvent::PreviousFolder => self.previous_folder()?,
                 AppEvent::Select => self.select()?,
 
+                AppEvent::ToggleHidden => self.toggle_hidden()?,
+
                 AppEvent::InputFieldOpenBash => self.input_field_open_bash(),
                 AppEvent::Escape => self.escape(),
             },
@@ -82,6 +86,8 @@ impl App {
             KeyCode::Right | KeyCode::Enter => self.events.send(AppEvent::Select),
             KeyCode::Left => self.events.send(AppEvent::PreviousFolder),
 
+            KeyCode::Char('.') => self.events.send(AppEvent::ToggleHidden),
+
             KeyCode::Char(char) => self.events.send(AppEvent::InputFieldOpenBash),
             KeyCode::Esc => self.events.send(AppEvent::Escape),
             _ => {}
@@ -92,7 +98,11 @@ impl App {
     pub fn refresh(&mut self) -> color_eyre::Result<()> {
         let mut entries: Vec<DirEntry> = fs::read_dir(&self.current_dir)?
             .collect::<Result<_, _>>()?;
-        
+
+        if !self.show_hidden {
+            entries.retain(|e| !e.file_name().to_string_lossy().starts_with('.'));
+        }
+
         entries.sort_by_key(|e| {
             let is_dir = e.file_type().map(|ft| ft.is_dir()).unwrap_or(false);
             (!is_dir, e.file_name().to_string_lossy().to_lowercase())
@@ -144,10 +154,9 @@ impl App {
         Ok(())
     }
 
-    pub fn input_field_open_commands(&mut self) {
-        // Clear input field
-        // Replace bash indicator "$" with command indicator ":"
-        // Move cursor to input box & highlight the box
+    pub fn toggle_hidden(&mut self) -> color_eyre::Result<()> {
+        self.show_hidden = !self.show_hidden;
+        self.refresh()
     }
 
     pub fn input_field_open_bash(&mut self) {
