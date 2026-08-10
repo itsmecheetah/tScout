@@ -5,6 +5,7 @@ use ratatui::DefaultTerminal;
 use ratatui::widgets::ListState;
 use std::fs::{self, DirEntry};
 use std::path::PathBuf;
+use std::process::Command;
 use tui_input::backend::crossterm::EventHandler as InputEventHandler;
 use tui_input::Input;
 
@@ -88,7 +89,7 @@ impl App {
 
                 AppEvent::InputFieldOpenBash(key_event) => self.input_field_open_bash(key_event),
                 AppEvent::Escape => self.escape(),
-                AppEvent::Execute => self.execute(),
+                AppEvent::Execute => self.execute()?,
             },
         }
         Ok(())
@@ -196,7 +197,12 @@ impl App {
         self.input_mode = InputMode::Normal;
     }
 
-    pub fn execute(&mut self) {
-        // Run the command
+    pub fn execute(&mut self) -> std::io::Result<()> {
+        if cfg!(target_os = "windows") {
+            Command::new("cmd").args(["/C", &self.input.value_and_reset()]).current_dir(&self.current_dir).status()?;
+        } else {
+            Command::new("sh").args(["-c", &self.input.value_and_reset()]).current_dir(&self.current_dir).status()?;
+        }
+        Ok(())
     }
 }
