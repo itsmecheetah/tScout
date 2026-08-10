@@ -23,7 +23,7 @@ impl App {
 
         let input_style = match self.input_mode {
             InputMode::Normal => Style::default(),
-            InputMode::Bash => Color::Yellow.into(),
+            InputMode::Command => Color::Yellow.into(),
         };
 
         frame.render_widget(
@@ -36,7 +36,7 @@ impl App {
         let width = area.width.max(3) - 3;
         let scroll = self.input.visual_scroll(width as usize);
 
-        if self.input_mode == InputMode::Bash {
+        if self.input_mode == InputMode::Command {
             let x = self.input.visual_cursor().max(scroll) - scroll + 3;
             frame.set_cursor_position((area.x + x as u16, area.y + 1))
         }

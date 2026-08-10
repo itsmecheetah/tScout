@@ -50,7 +50,7 @@ pub enum RefreshMode {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum InputMode {
     Normal,
-    Bash,
+    Command,
 }
 
 impl App {
@@ -87,7 +87,7 @@ impl App {
 
                 AppEvent::ToggleHidden => self.toggle_hidden()?,
 
-                AppEvent::InputFieldOpenBash(key_event) => self.input_field_open_bash(key_event),
+                AppEvent::InputFieldOpenCommand(key_event) => self.input_field_open_command(key_event),
                 AppEvent::Escape => self.escape(),
                 AppEvent::Execute => self.execute()?,
             },
@@ -109,11 +109,11 @@ impl App {
 
                 KeyCode::Char('.') => self.events.send(AppEvent::ToggleHidden),
 
-                KeyCode::Char(char) => self.events.send(AppEvent::InputFieldOpenBash(key_event)),
+                KeyCode::Char(char) => self.events.send(AppEvent::InputFieldOpenCommand(key_event)),
                 KeyCode::Esc => self.events.send(AppEvent::Escape),
                 _ => {}
             }
-            InputMode::Bash => match key_event.code {
+            InputMode::Command => match key_event.code {
                 KeyCode::Enter => self.events.send(AppEvent::Execute),
                 KeyCode::Esc => self.events.send(AppEvent::Escape),
                 _ => {
@@ -188,8 +188,8 @@ impl App {
         self.refresh(RefreshMode::Retain)
     }
 
-    pub fn input_field_open_bash(&mut self, key_event: KeyEvent) {
-        self.input_mode = InputMode::Bash;
+    pub fn input_field_open_command(&mut self, key_event: KeyEvent) {
+        self.input_mode = InputMode::Command;
         self.input.handle_event(&crossterm::event::Event::Key(key_event));
     }
 

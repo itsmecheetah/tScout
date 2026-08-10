@@ -23,7 +23,7 @@ pub enum AppEvent {
     Select,
     PreviousFolder,
     ToggleHidden,
-    InputFieldOpenBash(KeyEvent),
+    InputFieldOpenCommand(KeyEvent),
     Execute,
     Escape,
 }
