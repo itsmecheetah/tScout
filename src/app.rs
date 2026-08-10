@@ -5,6 +5,7 @@ use ratatui::DefaultTerminal;
 use ratatui::widgets::ListState;
 use std::fs::{self, DirEntry};
 use std::path::PathBuf;
+use tui_input::backend::crossterm::EventHandler as InputEventHandler;
 use tui_input::Input;
 
 #[derive(Debug)]
@@ -58,7 +59,7 @@ impl App {
         self.refresh(RefreshMode::Reset)?;
 
         while self.running {
-            terminal.draw(|frame| frame.render_widget(&mut self, frame.area()))?;
+            terminal.draw(|frame| self.render(frame))?;
             self.handle_events()?;
         }
         Ok(())
@@ -85,8 +86,9 @@ impl App {
 
                 AppEvent::ToggleHidden => self.toggle_hidden()?,
 
-                AppEvent::InputFieldOpenBash => self.input_field_open_bash(),
+                AppEvent::InputFieldOpenBash(key_event) => self.input_field_open_bash(key_event),
                 AppEvent::Escape => self.escape(),
+                AppEvent::Execute => self.execute(),
             },
         }
         Ok(())
@@ -106,12 +108,16 @@ impl App {
 
                 KeyCode::Char('.') => self.events.send(AppEvent::ToggleHidden),
 
-                KeyCode::Char(char) => self.events.send(AppEvent::InputFieldOpenBash),
+                KeyCode::Char(char) => self.events.send(AppEvent::InputFieldOpenBash(key_event)),
                 KeyCode::Esc => self.events.send(AppEvent::Escape),
                 _ => {}
             }
             InputMode::Bash => match key_event.code {
-                // Other keycodes
+                KeyCode::Enter => self.events.send(AppEvent::Execute),
+                KeyCode::Esc => self.events.send(AppEvent::Escape),
+                _ => {
+                    self.input.handle_event(&crossterm::event::Event::Key(key_event));
+                }
             }
         }
         Ok(())
@@ -161,10 +167,6 @@ impl App {
     }
 
     pub fn select(&mut self) -> color_eyre::Result<()> {
-        // when/if i also add bash this will be the same keybind to execute that command, so add that here.
-        // (note: currently the right arrow will ALSO run this function, so I should praobably do something
-        // about making sure that right arrow can still be used to navigate folders while typing bash.)
-
         if let Some(i) = self.list_state.selected() {
             if let Some(entry) = self.entries.get(i) {
                 let is_dir = entry.file_type()?.is_dir();
@@ -185,14 +187,16 @@ impl App {
         self.refresh(RefreshMode::Retain)
     }
 
-    pub fn input_field_open_bash(&mut self) {
-        // Clear input field
-        // Replace command indicator ":" with bash indicator "$" (if applicable)
-        // Move cursor to input box & highlight the box
+    pub fn input_field_open_bash(&mut self, key_event: KeyEvent) {
+        self.input_mode = InputMode::Bash;
+        self.input.handle_event(&crossterm::event::Event::Key(key_event));
     }
 
     pub fn escape(&mut self) {
-        // If inside input field, exit input field
-        // If inside output window, exit output window
+        self.input_mode = InputMode::Normal;
+    }
+
+    pub fn execute(&mut self) {
+        // Run the command
     }
 }
