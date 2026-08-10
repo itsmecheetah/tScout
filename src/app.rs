@@ -5,6 +5,7 @@ use ratatui::DefaultTerminal;
 use ratatui::widgets::ListState;
 use std::fs::{self, DirEntry};
 use std::path::PathBuf;
+use tui_input::Input;
 
 #[derive(Debug)]
 pub struct App {
@@ -14,6 +15,8 @@ pub struct App {
     pub current_dir: PathBuf,
     pub entries: Vec<DirEntry>,
     pub show_hidden: bool,
+    pub input: Input,
+    pub input_mode: InputMode,
 }
 
 impl Default for App {
@@ -30,6 +33,8 @@ impl Default for App {
             current_dir,
             entries: Vec::new(),
             show_hidden: false,
+            input: Default::default(),
+            input_mode: InputMode::Normal,
         }
     }
 }
@@ -38,6 +43,12 @@ impl Default for App {
 pub enum RefreshMode {
     Reset,
     Retain,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum InputMode {
+    Normal,
+    Bash,
 }
 
 impl App {
@@ -82,21 +93,26 @@ impl App {
     }
 
     pub fn handle_key_event(&mut self, key_event: KeyEvent) -> color_eyre::Result<()> {
-        match key_event.code {
-            KeyCode::Char('c' | 'C') if key_event.modifiers == KeyModifiers::CONTROL => {
+        match self.input_mode {
+            InputMode::Normal => match key_event.code {
+                KeyCode::Char('c' | 'C') if key_event.modifiers == KeyModifiers::CONTROL => {
                 self.events.send(AppEvent::Quit)
+                }
+
+                KeyCode::Down => self.events.send(AppEvent::NextItem),
+                KeyCode::Up => self.events.send(AppEvent::PreviousItem),
+                KeyCode::Right | KeyCode::Enter => self.events.send(AppEvent::Select),
+                KeyCode::Left => self.events.send(AppEvent::PreviousFolder),
+
+                KeyCode::Char('.') => self.events.send(AppEvent::ToggleHidden),
+
+                KeyCode::Char(char) => self.events.send(AppEvent::InputFieldOpenBash),
+                KeyCode::Esc => self.events.send(AppEvent::Escape),
+                _ => {}
             }
-
-            KeyCode::Down => self.events.send(AppEvent::NextItem),
-            KeyCode::Up => self.events.send(AppEvent::PreviousItem),
-            KeyCode::Right | KeyCode::Enter => self.events.send(AppEvent::Select),
-            KeyCode::Left => self.events.send(AppEvent::PreviousFolder),
-
-            KeyCode::Char('.') => self.events.send(AppEvent::ToggleHidden),
-
-            KeyCode::Char(char) => self.events.send(AppEvent::InputFieldOpenBash),
-            KeyCode::Esc => self.events.send(AppEvent::Escape),
-            _ => {}
+            InputMode::Bash => match key_event.code {
+                // Other keycodes
+            }
         }
         Ok(())
     }
