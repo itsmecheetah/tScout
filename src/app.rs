@@ -34,11 +34,17 @@ impl Default for App {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RefreshMode {
+    Reset,
+    Retain,
+}
+
 impl App {
     pub fn new() -> Self { Self::default() }
 
     pub fn run(mut self, mut terminal: DefaultTerminal) -> color_eyre::Result<()> {
-        self.refresh()?;
+        self.refresh(RefreshMode::Reset)?;
 
         while self.running {
             terminal.draw(|frame| frame.render_widget(&mut self, frame.area()))?;
@@ -95,7 +101,7 @@ impl App {
         Ok(())
     }
 
-    pub fn refresh(&mut self) -> color_eyre::Result<()> {
+    pub fn refresh(&mut self, refresh_mode: RefreshMode) -> color_eyre::Result<()> {
         let mut entries: Vec<DirEntry> = fs::read_dir(&self.current_dir)?
             .collect::<Result<_, _>>()?;
 
@@ -109,7 +115,9 @@ impl App {
         });
         self.entries = entries;
 
-        self.list_state.select(Some(0));
+        if refresh_mode == RefreshMode::Reset {
+            self.list_state.select(Some(0));
+        }
 
         Ok(())
     }
@@ -131,7 +139,7 @@ impl App {
     pub fn previous_folder(&mut self) -> color_eyre::Result<()> {
         if let Some(parent) = self.current_dir.parent() {
             self.current_dir = parent.to_path_buf();
-            self.refresh()?;
+            self.refresh(RefreshMode::Reset)?;
         }
         Ok(())
     }
@@ -146,7 +154,7 @@ impl App {
                 let is_dir = entry.file_type()?.is_dir();
                 if is_dir {
                     self.current_dir = entry.path();
-                    self.refresh()?;
+                    self.refresh(RefreshMode::Reset)?;
                 } else {
                     // file opening logic. i still don't rlly know how i wanna do this ngl.
                     // for now im js gonna do nothing and the user's gotta do `nvim <file>` or smt
@@ -158,7 +166,7 @@ impl App {
 
     pub fn toggle_hidden(&mut self) -> color_eyre::Result<()> {
         self.show_hidden = !self.show_hidden;
-        self.refresh()
+        self.refresh(RefreshMode::Retain)
     }
 
     pub fn input_field_open_bash(&mut self) {
