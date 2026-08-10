@@ -1,5 +1,5 @@
 use color_eyre::eyre::WrapErr;
-use crossterm::event::{self, Event as CrosstermEvent};
+use crossterm::event::{self, Event as CrosstermEvent, KeyEvent};
 use std::{
     sync::mpsc,
     thread,
@@ -23,7 +23,8 @@ pub enum AppEvent {
     Select,
     PreviousFolder,
     ToggleHidden,
-    InputFieldOpenBash,
+    InputFieldOpenBash(KeyEvent),
+    Execute,
     Escape,
 }
 

@@ -5,6 +5,9 @@ use ratatui::DefaultTerminal;
 use ratatui::widgets::ListState;
 use std::fs::{self, DirEntry};
 use std::path::PathBuf;
+use std::process::Command;
+use tui_input::backend::crossterm::EventHandler as InputEventHandler;
+use tui_input::Input;
 
 #[derive(Debug)]
 pub struct App {
@@ -14,6 +17,8 @@ pub struct App {
     pub current_dir: PathBuf,
     pub entries: Vec<DirEntry>,
     pub show_hidden: bool,
+    pub input: Input,
+    pub input_mode: InputMode,
 }
 
 impl Default for App {
@@ -30,6 +35,8 @@ impl Default for App {
             current_dir,
             entries: Vec::new(),
             show_hidden: false,
+            input: Default::default(),
+            input_mode: InputMode::Normal,
         }
     }
 }
@@ -40,6 +47,12 @@ pub enum RefreshMode {
     Retain,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum InputMode {
+    Normal,
+    Bash,
+}
+
 impl App {
     pub fn new() -> Self { Self::default() }
 
@@ -47,7 +60,7 @@ impl App {
         self.refresh(RefreshMode::Reset)?;
 
         while self.running {
-            terminal.draw(|frame| frame.render_widget(&mut self, frame.area()))?;
+            terminal.draw(|frame| self.render(frame))?;
             self.handle_events()?;
         }
         Ok(())
@@ -74,29 +87,39 @@ impl App {
 
                 AppEvent::ToggleHidden => self.toggle_hidden()?,
 
-                AppEvent::InputFieldOpenBash => self.input_field_open_bash(),
+                AppEvent::InputFieldOpenBash(key_event) => self.input_field_open_bash(key_event),
                 AppEvent::Escape => self.escape(),
+                AppEvent::Execute => self.execute()?,
             },
         }
         Ok(())
     }
 
     pub fn handle_key_event(&mut self, key_event: KeyEvent) -> color_eyre::Result<()> {
-        match key_event.code {
-            KeyCode::Char('c' | 'C') if key_event.modifiers == KeyModifiers::CONTROL => {
+        match self.input_mode {
+            InputMode::Normal => match key_event.code {
+                KeyCode::Char('c' | 'C') if key_event.modifiers == KeyModifiers::CONTROL => {
                 self.events.send(AppEvent::Quit)
+                }
+
+                KeyCode::Down => self.events.send(AppEvent::NextItem),
+                KeyCode::Up => self.events.send(AppEvent::PreviousItem),
+                KeyCode::Right | KeyCode::Enter => self.events.send(AppEvent::Select),
+                KeyCode::Left => self.events.send(AppEvent::PreviousFolder),
+
+                KeyCode::Char('.') => self.events.send(AppEvent::ToggleHidden),
+
+                KeyCode::Char(char) => self.events.send(AppEvent::InputFieldOpenBash(key_event)),
+                KeyCode::Esc => self.events.send(AppEvent::Escape),
+                _ => {}
             }
-
-            KeyCode::Down => self.events.send(AppEvent::NextItem),
-            KeyCode::Up => self.events.send(AppEvent::PreviousItem),
-            KeyCode::Right | KeyCode::Enter => self.events.send(AppEvent::Select),
-            KeyCode::Left => self.events.send(AppEvent::PreviousFolder),
-
-            KeyCode::Char('.') => self.events.send(AppEvent::ToggleHidden),
-
-            KeyCode::Char(char) => self.events.send(AppEvent::InputFieldOpenBash),
-            KeyCode::Esc => self.events.send(AppEvent::Escape),
-            _ => {}
+            InputMode::Bash => match key_event.code {
+                KeyCode::Enter => self.events.send(AppEvent::Execute),
+                KeyCode::Esc => self.events.send(AppEvent::Escape),
+                _ => {
+                    self.input.handle_event(&crossterm::event::Event::Key(key_event));
+                }
+            }
         }
         Ok(())
     }
@@ -145,10 +168,6 @@ impl App {
     }
 
     pub fn select(&mut self) -> color_eyre::Result<()> {
-        // when/if i also add bash this will be the same keybind to execute that command, so add that here.
-        // (note: currently the right arrow will ALSO run this function, so I should praobably do something
-        // about making sure that right arrow can still be used to navigate folders while typing bash.)
-
         if let Some(i) = self.list_state.selected() {
             if let Some(entry) = self.entries.get(i) {
                 let is_dir = entry.file_type()?.is_dir();
@@ -169,14 +188,21 @@ impl App {
         self.refresh(RefreshMode::Retain)
     }
 
-    pub fn input_field_open_bash(&mut self) {
-        // Clear input field
-        // Replace command indicator ":" with bash indicator "$" (if applicable)
-        // Move cursor to input box & highlight the box
+    pub fn input_field_open_bash(&mut self, key_event: KeyEvent) {
+        self.input_mode = InputMode::Bash;
+        self.input.handle_event(&crossterm::event::Event::Key(key_event));
     }
 
     pub fn escape(&mut self) {
-        // If inside input field, exit input field
-        // If inside output window, exit output window
+        self.input_mode = InputMode::Normal;
+    }
+
+    pub fn execute(&mut self) -> std::io::Result<()> {
+        if cfg!(target_os = "windows") {
+            Command::new("cmd").args(["/C", &self.input.value_and_reset()]).current_dir(&self.current_dir).status()?;
+        } else {
+            Command::new("sh").args(["-c", &self.input.value_and_reset()]).current_dir(&self.current_dir).status()?;
+        }
+        Ok(())
     }
 }
