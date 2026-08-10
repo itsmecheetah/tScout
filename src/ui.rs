@@ -1,4 +1,6 @@
 use ratatui::{buffer::Buffer, layout::{Alignment, Rect, Layout, Constraint, Direction}, style::{Color, Style, Stylize}, widgets::{Block, List, BorderType, Paragraph, Widget, StatefulWidget}, text::Line, Frame};
+use ratatui::style::Modifier;
+use ratatui::text::Span;
 use crate::app::{App, InputMode};
 
 impl App {
@@ -10,8 +12,8 @@ impl App {
             .split(area);
 
         let header_block = Block::bordered()
-            .title("bash")
-            .title_alignment(Alignment::Left)
+            .title(Line::from(Span::styled("tScout", Style::default().add_modifier(Modifier::BOLD), )))
+            .title(Line::from("(≧▽≦)").alignment(Alignment::Right))
             .border_type(BorderType::Rounded);
 
         let file_block = Block::bordered()
