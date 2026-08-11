@@ -175,8 +175,14 @@ impl App {
                     self.current_dir = entry.path();
                     self.refresh(RefreshMode::Reset)?;
                 } else {
-                    // file opening logic. i still don't rlly know how i wanna do this ngl.
-                    // for now im js gonna do nothing and the user's gotta do `nvim <file>` or smt
+                    if cfg!(target_os = "windows") {
+                        // todo windows file selection
+                        // when i finish writing the linux file-opener i'll boot into windows and do this one
+                        // but for now it'll js not work on windows lmao
+                    } else {
+                        let editor = std::env::var("EDITOR")?;
+                        Command::new(editor).arg(entry.path()).status()?;
+                    }
                 }
             }
         }
