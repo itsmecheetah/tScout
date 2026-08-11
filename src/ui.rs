@@ -1,4 +1,4 @@
-use ratatui::{buffer::Buffer, layout::{Alignment, Rect, Layout, Constraint, Direction}, style::{Color, Style, Stylize}, widgets::{Block, List, BorderType, Paragraph, Widget, StatefulWidget}, text::Line, Frame};
+use ratatui::{layout::{Alignment, Layout, Constraint, Direction}, style::{Color, Style}, widgets::{Block, List, BorderType, Paragraph}, text::Line, Frame};
 use ratatui::style::Modifier;
 use ratatui::text::Span;
 use crate::app::{App, InputMode};
