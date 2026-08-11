@@ -22,8 +22,12 @@ impl App {
             .border_type(BorderType::Rounded);
 
         let input_style = match self.input_mode {
+            InputMode::Normal => Color::DarkGray.into(),
+            InputMode::Command => Style::default(),
+        };
+        let file_style = match self.input_mode {
             InputMode::Normal => Style::default(),
-            InputMode::Command => Color::Yellow.into(),
+            InputMode::Command => Color::DarkGray.into(),
         };
 
         frame.render_widget(
@@ -46,6 +50,7 @@ impl App {
             .collect();
         let list = List::new(items)
             .block(file_block)
+            .style(file_style)
             .highlight_style(Style::new())
             .highlight_symbol("> ")
             .repeat_highlight_symbol(true);
