@@ -3,8 +3,12 @@
 * Navigate folders
 * Show/hide hidden files
 * Run commands
-* Open files in your default editor
+* Open files in your default editor*
+
 More to come soon!
+
+*linux only *(i should really do this at some point)*
+
 
 ## Screenshots
 <img src="https://github.com/itsmecheetah/tScout/blob/main/screenshots/0.png?raw=true" width="600" height="400">
