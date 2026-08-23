@@ -1,4 +1,5 @@
 # tScout
+[![Rust](https://github.com/itsmecheetah/tScout/actions/workflows/rust.yml/badge.svg)](https://github.com/itsmecheetah/tScout/actions/workflows/rust.yml)
 ## Features
 * Navigate folders
 * Show/hide hidden files
