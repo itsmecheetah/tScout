@@ -209,6 +209,7 @@ impl App {
         } else {
             Command::new("sh").args(["-c", &self.input.value_and_reset()]).current_dir(&self.current_dir).status()?;
         }
+        let _ = self.refresh(RefreshMode::Retain);
         Ok(())
     }
 }
