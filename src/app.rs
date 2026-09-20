@@ -15,6 +15,7 @@ pub struct App {
     pub events: EventHandler,
     pub list_state: ListState,
     pub current_dir: PathBuf,
+    pub dir_entries: Vec<DirEntry>,
     pub entries: Vec<DirEntry>,
     pub show_hidden: bool,
     pub input: Input,
@@ -33,6 +34,7 @@ impl Default for App {
             events: EventHandler::new(),
             list_state,
             current_dir,
+            dir_entries: Vec::new(),
             entries: Vec::new(),
             show_hidden: false,
             input: Default::default(),
@@ -128,15 +130,26 @@ impl App {
         let mut entries: Vec<DirEntry> = fs::read_dir(&self.current_dir)?
             .collect::<Result<_, _>>()?;
 
+        let mut dir_entries: Vec<DirEntry> = fs::read_dir(&self.current_dir)?
+            .collect::<Result<_, _>>()?;
+
+        entries.retain(|e| !e.file_type().unwrap().is_dir());
+        dir_entries.retain(|e| e.file_type().unwrap().is_dir());
+
         if !self.show_hidden {
             entries.retain(|e| !e.file_name().to_string_lossy().starts_with('.'));
         }
 
         entries.sort_by_key(|e| {
-            let is_dir = e.file_type().map(|ft| ft.is_dir()).unwrap_or(false);
-            (!is_dir, e.file_name().to_string_lossy().to_lowercase())
+            e.file_name().to_string_lossy().to_lowercase()
         });
+
+        dir_entries.sort_by_key(|e| {
+            e.file_name().to_string_lossy().to_lowercase()
+        });
+
         self.entries = entries;
+        self.dir_entries = dir_entries;
 
         if refresh_mode == RefreshMode::Reset {
             self.list_state.select(Some(0));

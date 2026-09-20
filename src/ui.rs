@@ -45,10 +45,18 @@ impl App {
             frame.set_cursor_position((area.x + x as u16, area.y + 1))
         }
 
-        let items: Vec<String> = self.entries.iter()
+        let file_items: Vec<String> = self.entries.iter()
             .map(|e| e.file_name().to_string_lossy().into_owned())
             .collect();
-        let list = List::new(items)
+
+        let mut dir_items: Vec<String> = self.dir_entries.iter()
+            .map(|e| e.file_name().to_string_lossy().into_owned())
+            .map(|e| format!("{e}/"))
+            .collect();
+
+        dir_items.extend(file_items);
+
+        let list = List::new(dir_items)
             .block(file_block)
             .style(file_style)
             .highlight_style(Style::new())
