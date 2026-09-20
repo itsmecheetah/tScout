@@ -109,7 +109,7 @@ impl App {
 
                 KeyCode::Char('.') => self.events.send(AppEvent::ToggleHidden),
 
-                KeyCode::Char(char) => self.events.send(AppEvent::InputFieldOpenCommand(key_event)),
+                KeyCode::Char(_char) => self.events.send(AppEvent::InputFieldOpenCommand(key_event)),
                 KeyCode::Esc => self.events.send(AppEvent::Escape),
                 _ => {}
             }
