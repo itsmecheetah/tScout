@@ -238,6 +238,7 @@ impl App {
 
             },
         }
+        self.input_mode = InputMode::Normal;
         Ok(())
     }
 }
