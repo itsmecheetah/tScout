@@ -222,19 +222,22 @@ impl App {
     }
 
     pub fn execute(&mut self) -> std::io::Result<()> {
-        if self.execution_target == ExecutionTarget::CD {
-            self.current_dir.push(&self.input.value_and_reset());
-            let _ = self.refresh(RefreshMode::Reset);
-            self.execution_target = ExecutionTarget::Unset;
-            return Ok(());
-        }
+        match self.execution_target {
+            ExecutionTarget::CD => {
+                self.current_dir.push(&self.input.value_and_reset());
+                let _ = self.refresh(RefreshMode::Reset);
+                self.execution_target = ExecutionTarget::Unset;
+            },
+            ExecutionTarget::Unset|ExecutionTarget::Command => {
+                if cfg!(target_os = "windows") {
+                    Command::new("cmd").args(["/C", &self.input.value_and_reset()]).current_dir(&self.current_dir).status()?;
+                } else {
+                    Command::new("sh").args(["-c", &self.input.value_and_reset()]).current_dir(&self.current_dir).status()?;
+                }
+                let _ = self.refresh(RefreshMode::Retain);
 
-        if cfg!(target_os = "windows") {
-            Command::new("cmd").args(["/C", &self.input.value_and_reset()]).current_dir(&self.current_dir).status()?;
-        } else {
-            Command::new("sh").args(["-c", &self.input.value_and_reset()]).current_dir(&self.current_dir).status()?;
+            },
         }
-        let _ = self.refresh(RefreshMode::Retain);
         Ok(())
     }
 }
