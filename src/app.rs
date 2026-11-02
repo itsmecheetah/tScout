@@ -19,6 +19,7 @@ pub struct App {
     pub show_hidden: bool,
     pub input: Input,
     pub input_mode: InputMode,
+    pub execution_target: ExecutionTarget,
 }
 
 impl Default for App {
@@ -37,6 +38,7 @@ impl Default for App {
             show_hidden: false,
             input: Default::default(),
             input_mode: InputMode::Normal,
+            execution_target: ExecutionTarget::Unset,
         }
     }
 }
@@ -51,6 +53,13 @@ pub enum RefreshMode {
 pub enum InputMode {
     Normal,
     Command,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ExecutionTarget {
+    Unset,
+    Command,
+    CD,
 }
 
 impl App {
@@ -121,6 +130,10 @@ impl App {
                 }
             }
         }
+        if self.input.value().to_string() == "cd " && self.execution_target == ExecutionTarget::Unset {
+            self.execution_target = ExecutionTarget::CD;
+            self.input.reset();
+        }
         Ok(())
     }
 
@@ -161,7 +174,7 @@ impl App {
 
     pub fn previous_folder(&mut self) -> color_eyre::Result<()> {
         if let Some(parent) = self.current_dir.parent() {
-            self.current_dir = parent.to_path_buf();
+        self.current_dir = parent.to_path_buf();
             self.refresh(RefreshMode::Reset)?;
         }
         Ok(())
@@ -195,15 +208,27 @@ impl App {
     }
 
     pub fn input_field_open_command(&mut self, key_event: KeyEvent) {
+        self.execution_target = ExecutionTarget::Unset;
         self.input_mode = InputMode::Command;
         self.input.handle_event(&crossterm::event::Event::Key(key_event));
     }
 
     pub fn escape(&mut self) {
-        self.input_mode = InputMode::Normal;
+        if self.execution_target == ExecutionTarget::CD {
+            self.execution_target = ExecutionTarget::Command;
+        } else {
+            self.input_mode = InputMode::Normal;
+        }
     }
 
     pub fn execute(&mut self) -> std::io::Result<()> {
+        if self.execution_target == ExecutionTarget::CD {
+            self.current_dir.push(&self.input.value_and_reset());
+            let _ = self.refresh(RefreshMode::Reset);
+            self.execution_target = ExecutionTarget::Unset;
+            return Ok(());
+        }
+
         if cfg!(target_os = "windows") {
             Command::new("cmd").args(["/C", &self.input.value_and_reset()]).current_dir(&self.current_dir).status()?;
         } else {

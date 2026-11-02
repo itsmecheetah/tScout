@@ -1,7 +1,7 @@
 use ratatui::{layout::{Alignment, Layout, Constraint, Direction}, style::{Color, Style}, widgets::{Block, List, BorderType, Paragraph}, text::Line, Frame};
 use ratatui::style::Modifier;
 use ratatui::text::Span;
-use crate::app::{App, InputMode};
+use crate::app::{App, InputMode, ExecutionTarget};
 
 impl App {
     pub fn render(&mut self, frame: &mut Frame) {
@@ -11,8 +11,13 @@ impl App {
             .constraints([Constraint::Length(3), Constraint::Min(0)])
             .split(area);
 
+        let title_content = match self.execution_target {
+            ExecutionTarget::Unset => "─$",
+            ExecutionTarget::Command => "─$",
+            ExecutionTarget::CD => "─cd",
+        };
         let header_block = Block::bordered()
-            .title(Line::from(Span::styled("tScout", Style::default().add_modifier(Modifier::BOLD), )))
+            .title(Line::from(Span::styled(title_content, Style::default().add_modifier(Modifier::BOLD), )))
             .title(Line::from("(≧▽≦)").alignment(Alignment::Right))
             .border_type(BorderType::Rounded);
 
@@ -31,7 +36,7 @@ impl App {
         };
 
         frame.render_widget(
-            Paragraph::new(format!("$ {}", self.input.value()))
+            Paragraph::new(format!(" {}", self.input.value()))
                 .style(input_style)
                 .block(header_block),
             layout[0],
@@ -41,7 +46,7 @@ impl App {
         let scroll = self.input.visual_scroll(width as usize);
 
         if self.input_mode == InputMode::Command {
-            let x = self.input.visual_cursor().max(scroll) - scroll + 3;
+            let x = self.input.visual_cursor().max(scroll) - scroll + 2;
             frame.set_cursor_position((area.x + x as u16, area.y + 1))
         }
 
