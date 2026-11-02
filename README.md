@@ -1,8 +1,11 @@
 # tScout
 [![Rust](https://github.com/itsmecheetah/tScout/actions/workflows/rust.yml/badge.svg)](https://github.com/itsmecheetah/tScout/actions/workflows/rust.yml)
 
+> [!IMPORTANT]
+> Make sure your terminal has a nerd font installed! Otherwise, some icons will not work.
+
 > [!WARNING]
-> Currently, opening text files within tScout is kind of broken. (either clicking enter while it's highlighted, or running an editor from the command line.) Use something like `kitty nvim <file>` or whatever makes sense for your setup to circumvent this for now.
+> Opening TUI applications within tScout is not reliable. Use `kitty nvim <file>` or whatever makes sense for your setup instead.
 
 ## Features
 * Navigate folders
