@@ -216,6 +216,7 @@ impl App {
     pub fn escape(&mut self) {
         if self.execution_target == ExecutionTarget::CD {
             self.execution_target = ExecutionTarget::Command;
+            self.input = Input::default().with_value("cd ".to_string());
         } else {
             self.input_mode = InputMode::Normal;
         }
