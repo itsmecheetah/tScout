@@ -3,7 +3,7 @@ use crate::event::{AppEvent, Event, EventHandler};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use ratatui::DefaultTerminal;
 use ratatui::widgets::ListState;
-use std::fs::{self, DirEntry};
+use std::fs::{self, DirEntry };
 use std::path::PathBuf;
 use std::process::Command;
 use tui_input::backend::crossterm::EventHandler as InputEventHandler;
@@ -138,6 +138,7 @@ impl App {
     }
 
     pub fn refresh(&mut self, refresh_mode: RefreshMode) -> color_eyre::Result<()> {
+        self.current_dir = self.current_dir.canonicalize()?;
         let mut entries: Vec<DirEntry> = fs::read_dir(&self.current_dir)?
             .collect::<Result<_, _>>()?;
 
